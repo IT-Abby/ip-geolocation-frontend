@@ -1,3 +1,4 @@
+// IPinfoScreen.tsx
 import React, { useState, useEffect, JSX } from "react";
 import {
   View,
@@ -10,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { supabase } from "@/scripts/supabase";
+import { router } from "expo-router";
 
 interface ASNData {
   asn: string;
@@ -57,6 +59,9 @@ const IPinfoScreen: React.FC = () => {
   const [currentIP, setCurrentIP] = useState<string>("");
   const [searchIP, setSearchIP] = useState<string>("");
   const [ipData, setIpData] = useState<IPInfoData | null>(null);
+  const [currentUserIPData, setCurrentUserIPData] = useState<IPInfoData | null>(
+    null
+  ); // ADDED
   const [loading, setLoading] = useState<boolean>(false);
   const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [userEmail, setUserEmail] = useState<string>("");
@@ -105,8 +110,8 @@ const IPinfoScreen: React.FC = () => {
       if (response.ok) {
         setCurrentIP(data.ip);
         setIpData(data);
+        setCurrentUserIPData(data);
 
-        // Optional: Save IP info to Supabase user metadata or separate table
         await saveIPToSupabase(data);
       } else {
         Alert.alert("Error", "Failed to fetch current IP address");
@@ -176,17 +181,25 @@ const IPinfoScreen: React.FC = () => {
     fetchIPInfo(searchIP);
   };
 
+  const handleClearSearch = (): void => {
+    setSearchIP("");
+    if (currentUserIPData) {
+      setIpData(currentUserIPData);
+    }
+  };
+
   const handleLogout = async (): Promise<void> => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
         Alert.alert("Error", "Failed to log out");
+        return;
       }
+      router.replace("/login/page");
     } catch (error) {
       Alert.alert("Error", `Logout failed: ${(error as Error).message}`);
     }
   };
-
   const renderInfoRow = (
     label: string,
     value: string | undefined
@@ -203,7 +216,7 @@ const IPinfoScreen: React.FC = () => {
   if (initialLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#7461F4" />
         <Text style={styles.loadingText}>
           Authenticating and fetching IP...
         </Text>
@@ -229,13 +242,21 @@ const IPinfoScreen: React.FC = () => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Enter IP address (e.g., 8.8.8.8)"
+          placeholder="Enter IP address"
           value={searchIP}
           onChangeText={setSearchIP}
           keyboardType="numeric"
           autoCapitalize="none"
           autoCorrect={false}
         />
+        {searchIP ? (
+          <TouchableOpacity
+            style={styles.clearButton}
+            onPress={handleClearSearch}
+          >
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity
           style={styles.searchButton}
           onPress={handleSearch}
@@ -393,6 +414,19 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   searchButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  clearButton: {
+    backgroundColor: "#FF3B30",
+    paddingHorizontal: 15,
+    marginLeft: 10,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  clearButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
