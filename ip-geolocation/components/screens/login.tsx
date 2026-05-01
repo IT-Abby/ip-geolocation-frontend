@@ -13,7 +13,7 @@ import LOGO from "@/assets/images/ip-location.svg";
 import Input from "@/components/input-field";
 import CustomButton from "@/components/custom-button";
 
-export default function LoginPage() {
+export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
